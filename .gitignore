@@ -57,3 +57,8 @@ htmlcov/
 # Temporary Files
 tmp/
 temp/
+
+frontend/dist/
+frontend/node_modules/
+frontend/.env
+frontend/.next/
