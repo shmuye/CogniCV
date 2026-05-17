@@ -1,25 +1,27 @@
 # Virtual Environment
-.venv/
-venv/
-env/
+backend/.venv/
+
 
 # Python Cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
 
 # Environment Variables
-.env
+
+backend/env/
+frontend/.env/
 
 # Vector Database
-chroma_db/
+backend/chroma_db/
 
 # Uploaded Documents
-data/
+backend/data/
 
 # Jupyter Notebook
-.ipynb_checkpoints/
+
+backend/.ipynb_checkpoints/
 
 # macOS
 .DS_Store
@@ -34,31 +36,31 @@ data/
 .idea/
 
 # Python Build Files
-build/
-dist/
-*.egg-info/
+backend/build/
+backend/dist/
+backend/*.egg-info/
 
 # Logs
-*.log
+backend/*.log
 
 # Testing
-.pytest_cache/
+backend/.pytest_cache/
 
 # Coverage
-.coverage
-htmlcov/
+backend/.coverage
+backend/htmlcov/
 
 # Mypy
-.mypy_cache/
+backend/.mypy_cache/
 
 # Ruff
-.ruff_cache/
+backend/.ruff_cache/    
+
 
 # Temporary Files
-tmp/
-temp/
+backend/tmp/
+backend/temp/
 
 frontend/dist/
 frontend/node_modules/
-frontend/.env
 frontend/.next/

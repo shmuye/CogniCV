@@ -1,4 +1,4 @@
-from langchain_ollama import ollama_embeddings, ChatOllama
+from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -7,7 +7,7 @@ from langchain_classic.chains.retrieval import create_retrieval_chain
 
 # Models
 
-embeddings = ollama_embeddings(
+embeddings = OllamaEmbeddings(
     model="mxbai-embed-large"
 )
 
