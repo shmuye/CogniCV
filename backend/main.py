@@ -5,7 +5,7 @@ from app.api.routes import chat, upload, health
 
 app = FastAPI()
 
-# CORS (for Next.js)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routes
+
 app.include_router(chat.router, prefix="/chat")
 app.include_router(upload.router, prefix="/upload")
 app.include_router(health.router, prefix="/health")
