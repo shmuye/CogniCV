@@ -25,7 +25,7 @@ export default function ChatContainer() {
 
       const botMessage: Message = {
         role: 'assistant',
-        content: res.answer,
+        content: res.answer
       }
 
       setMessages(prev => [...prev, botMessage])
