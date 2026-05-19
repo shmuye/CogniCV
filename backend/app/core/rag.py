@@ -1,11 +1,26 @@
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_ollama import (
+    OllamaEmbeddings,
+    ChatOllama,
+)
+
 from langchain_chroma import Chroma
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_classic.chains.retrieval import create_retrieval_chain   
+
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+)
+
+from langchain_classic.chains.combine_documents import (
+    create_stuff_documents_chain,
+)
+
+from langchain_classic.chains.retrieval import (
+    create_retrieval_chain,
+)
 
 
+# =========================
 # Models
+# =========================
 
 embeddings = OllamaEmbeddings(
     model="mxbai-embed-large"
@@ -16,13 +31,18 @@ llm = ChatOllama(
     temperature=0,
 )
 
-# Prompt template
-prompt = ChatPromptTemplate.from_template("""
+
+# =========================
+# Prompt
+# =========================
+
+prompt = ChatPromptTemplate.from_template(
+    """
 You are a resume analysis assistant.
 
 Answer ONLY using the provided context.
 
-If not found, say:
+If the answer is not found in the context, say:
 "I could not find that information in the document."
 
 Context:
@@ -32,15 +52,26 @@ Question:
 {input}
 
 Answer:
-""")
+"""
+)
 
-# Global store simple version
+
+# =========================
+# Globals
+# =========================
 
 vector_store = None
 rag_chain = None
 
+
+# =========================
+# Load RAG Chain
+# =========================
+
 def load_vector_store():
-    global vector_store, rag_chain
+
+    global vector_store
+    global rag_chain
 
     vector_store = Chroma(
         persist_directory="./chroma_db",
@@ -52,8 +83,8 @@ def load_vector_store():
     )
 
     document_chain = create_stuff_documents_chain(
-        llm=llm, 
-        prompt=prompt
+        llm=llm,
+        prompt=prompt,
     )
 
     rag_chain = create_retrieval_chain(
@@ -61,9 +92,29 @@ def load_vector_store():
         document_chain,
     )
 
+
+# =========================
+# Query
+# =========================
+
 def query_rag(question: str):
-    
+
+    global rag_chain
+
     if rag_chain is None:
-        return "No documents indexed yet"
-    result = rag_chain.invoke({ "input": question})
-    return result["answer"]
+        return {
+            "answer": "No documents indexed yet.",
+            "sources": [],
+        }
+
+    result = rag_chain.invoke({
+        "input": question
+    })
+
+    return {
+        "answer": result["answer"],
+        "sources": [
+            doc.page_content
+            for doc in result["context"]
+        ]
+    }

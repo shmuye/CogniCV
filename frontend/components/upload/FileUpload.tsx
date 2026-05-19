@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function FileUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -25,7 +25,7 @@ export default function FileUpload() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await axios.post(`${API_URL}/upload`, formData)
+      const res = await axios.post(`${API_URL}/upload/`, formData)
       if (!res.data) throw new Error()
 
     } catch (err) {
