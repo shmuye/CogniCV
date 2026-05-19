@@ -1,75 +1,62 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import axios from 'axios'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function FileUpload() {
-  const [file, setFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
 
-  const handleUpload = async () => {
+  const handleClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
     if (!file) return
 
     setLoading(true)
-    setMessage('')
 
     try {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch(`${API_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-      })
+      const res = await axios.post(`${API_URL}/upload`, formData)
+      if (!res.data) throw new Error()
 
-      if (!res.ok) {
-        throw new Error('Upload failed')
-      }
-
-      const data = await res.json()
-
-      setMessage(data.message || 'Upload successful')
     } catch (err) {
       console.error(err)
-      setMessage('Upload failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="border rounded-xl p-4 space-y-4 bg-white shadow">
-      
-      <h2 className="font-semibold text-lg">
-        Upload Resume (PDF)
-      </h2>
-
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => {
-          if (e.target.files?.[0]) {
-            setFile(e.target.files[0])
-          }
-        }}
-        className="block w-full"
-      />
-
+    <>
       <button
-        onClick={handleUpload}
-        disabled={loading}
-        className="bg-black text-white px-4 py-2 rounded-xl"
+        onClick={handleClick}
+        className="p-2 rounded-lg hover:bg-gray-700 transition"
       >
-        {loading ? 'Uploading...' : 'Upload'}
+        ➕
       </button>
 
-      {message && (
-        <p className="text-sm text-gray-600">
-          {message}
-        </p>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf"
+        hidden
+        onChange={handleFileChange}
+      />
+
+      {loading && (
+        <span className="text-xs text-gray-400">
+          Uploading...
+        </span>
       )}
-    </div>
+    </>
   )
 }

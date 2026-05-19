@@ -1,17 +1,13 @@
-import FileUpload from '@/components/upload/FileUpload'
 import Link from 'next/link'
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-center h-screen gap-6">
-      
-      <FileUpload />
-
+    <main className="flex items-center justify-center h-screen">
       <Link
         href="/chat"
-        className="px-6 py-3 bg-black text-white rounded-xl"
+        className="bg-blue-600 text-white px-6 py-3 rounded-xl"
       >
-        Open Chat
+        Start Chat
       </Link>
     </main>
   )
