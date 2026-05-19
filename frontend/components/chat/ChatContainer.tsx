@@ -51,14 +51,14 @@ export default function ChatContainer() {
             }`}
           >
             <div
-              className={`px-4 py-3 rounded-2xl max-w-[75%] ${
-                msg.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-200'
-              }`}
-            >
-              {msg.content}
-            </div>
+  className={`px-4 py-3 rounded-2xl max-w-[75%] whitespace-pre-wrap leading-7 ${
+    msg.role === 'user'
+      ? 'bg-blue-600 text-white'
+      : 'bg-gray-800 text-gray-200'
+  }`}
+>
+  {msg.content}
+</div>
           </div>
         ))}
 
