@@ -2,12 +2,24 @@
 
 import { useRef, useState } from 'react'
 import axios from 'axios'
+import { Plus } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:8000'
 
-export default function FileUpload() {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [loading, setLoading] = useState(false)
+interface Props {
+  onUploadSuccess?: (fileName: string) => void
+}
+
+export default function FileUpload({
+  onUploadSuccess,
+}: Props) {
+  const fileInputRef =
+    useRef<HTMLInputElement>(null)
+
+  const [loading, setLoading] =
+    useState(false)
 
   const handleClick = () => {
     fileInputRef.current?.click()
@@ -17,16 +29,26 @@ export default function FileUpload() {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0]
+
     if (!file) return
 
     setLoading(true)
 
     try {
       const formData = new FormData()
+
       formData.append('file', file)
 
-      const res = await axios.post(`${API_URL}/upload/`, formData)
-      if (!res.data) throw new Error()
+      const res = await axios.post(
+        `${API_URL}/upload/`,
+        formData
+      )
+
+      if (!res.data) {
+        throw new Error()
+      }
+
+      onUploadSuccess?.(file.name)
 
     } catch (err) {
       console.error(err)
@@ -38,10 +60,16 @@ export default function FileUpload() {
   return (
     <>
       <button
+        type="button"
         onClick={handleClick}
-        className="p-2 rounded-lg hover:bg-gray-700 transition"
+        className="
+          p-2
+          rounded-full
+          hover:bg-gray-700
+          transition
+        "
       >
-        ➕
+        <Plus size={20} />
       </button>
 
       <input

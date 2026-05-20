@@ -7,4 +7,5 @@ langchain-classic
 chromadb
 pymupdf
 fastapi
+pydantic
 uvicorn
