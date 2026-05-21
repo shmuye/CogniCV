@@ -1,7 +1,13 @@
 from fastapi import APIRouter
+from fastapi.responses import (
+    StreamingResponse,
+)
+
 from pydantic import BaseModel
 
-from app.core.rag import query_rag
+from app.core.rag import (
+    query_rag_stream,
+)
 
 router = APIRouter()
 
@@ -11,8 +17,16 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/")
-def chat(request: ChatRequest):
+async def chat(request: ChatRequest):
 
-    result = query_rag(request.message)
+    async def event_generator():
 
-    return result
+        async for chunk in query_rag_stream(
+            request.message
+        ):
+            yield chunk
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/plain",
+    )

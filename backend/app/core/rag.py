@@ -9,14 +9,6 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
 )
 
-from langchain_classic.chains.combine_documents import (
-    create_stuff_documents_chain,
-)
-
-from langchain_classic.chains.retrieval import (
-    create_retrieval_chain,
-)
-
 
 # =========================
 # Models
@@ -29,6 +21,7 @@ embeddings = OllamaEmbeddings(
 llm = ChatOllama(
     model="llama3:8b",
     temperature=0,
+    streaming=True,
 )
 
 
@@ -58,7 +51,7 @@ Context:
 {context}
 
 Question:
-{input}
+{question}
 
 Answer:
 """
@@ -70,60 +63,51 @@ Answer:
 # =========================
 
 vector_store = None
-rag_chain = None
 
 
 # =========================
-# Load RAG Chain
+# Load Vector Store
 # =========================
 
 def load_vector_store():
 
     global vector_store
-    global rag_chain
 
     vector_store = Chroma(
         persist_directory="./chroma_db",
         embedding_function=embeddings,
     )
 
+
+# =========================
+# Streaming Query
+# =========================
+
+async def query_rag_stream(question: str):
+
+    global vector_store
+
+    if vector_store is None:
+        yield "No documents indexed yet."
+        return
+
     retriever = vector_store.as_retriever(
         search_kwargs={"k": 3}
     )
 
-    document_chain = create_stuff_documents_chain(
-        llm=llm,
-        prompt=prompt,
+    docs = retriever.invoke(question)
+
+    context = "\n\n".join([
+        doc.page_content
+        for doc in docs
+    ])
+
+    final_prompt = prompt.format(
+        context=context,
+        question=question,
     )
 
-    rag_chain = create_retrieval_chain(
-        retriever,
-        document_chain,
-    )
-
-
-# =========================
-# Query
-# =========================
-
-def query_rag(question: str):
-
-    global rag_chain
-
-    if rag_chain is None:
-        return {
-            "answer": "No documents indexed yet.",
-            "sources": [],
-        }
-
-    result = rag_chain.invoke({
-        "input": question
-    })
-
-    return {
-        "answer": result["answer"],
-        "sources": [
-            doc.page_content
-            for doc in result["context"]
-        ]
-    }
+    async for chunk in llm.astream(
+        final_prompt
+    ):
+        yield chunk.content

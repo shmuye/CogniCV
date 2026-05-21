@@ -9,7 +9,7 @@ import {
   FileText,
 } from 'lucide-react'
 
-import { sendMessage } from '@/services/rag.service'
+import { streamMessage } from '@/services/rag.service'
 
 import FileUpload from '../upload/FileUpload'
 
@@ -33,35 +33,47 @@ export default function ChatContainer() {
   const handleSend = async () => {
     if (!input.trim()) return
 
+    const currentInput = input
+
     const userMessage: Message = {
       role: 'user',
-      content: input,
+      content: currentInput,
     }
 
     setMessages((prev) => [
       ...prev,
       userMessage,
+      {
+        role: 'assistant',
+        content: '',
+      },
     ])
 
+    setInput('')
     setLoading(true)
 
+    const assistantIndex =
+      messages.length + 1
+
     try {
-      const res = await sendMessage(input)
+      await streamMessage(
+        currentInput,
+        (chunk) => {
+          setMessages((prev) => {
+            const updated = [...prev]
 
-      const botMessage: Message = {
-        role: 'assistant',
-        content: res.answer,
-      }
+            updated[
+              assistantIndex
+            ].content += chunk
 
-      setMessages((prev) => [
-        ...prev,
-        botMessage,
-      ])
+            return updated
+          })
+        }
+      )
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
-      setInput('')
     }
   }
 
@@ -97,7 +109,7 @@ export default function ChatContainer() {
             ))}
 
             {loading && (
-              <div className="text-gray-400">
+              <div className="text-gray-400 animate-pulse">
                 Thinking...
               </div>
             )}
@@ -125,7 +137,7 @@ export default function ChatContainer() {
         </div>
       )}
 
-      {/* Bottom Layout After Messages */}
+      {/* Bottom Layout */}
       {hasMessages && (
         <div className="border-t border-gray-800 px-4 py-4">
           <div className="max-w-3xl mx-auto">
