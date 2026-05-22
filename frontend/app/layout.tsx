@@ -1,6 +1,10 @@
+import { icons } from "lucide-react";
 import "./globals.css";
 
 export const metadata = {
+  icons: {
+    icon: "/resume.png",
+  },
   title: "RAG Chatbot",
   description: "AI Resume Assistant",
 };
