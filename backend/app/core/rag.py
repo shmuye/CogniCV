@@ -107,7 +107,10 @@ async def query_rag_stream(question: str):
         question=question,
     )
 
-    async for chunk in llm.astream(
+   full_response = ""
+
+   async for chunk in llm.astream(
         final_prompt
     ):
-        yield chunk.content
+        full_response += chunk.content
+        yield full_response

@@ -64,7 +64,7 @@ export default function ChatContainer() {
 
             updated[
               assistantIndex
-            ].content += chunk
+            ].content = chunk
 
             return updated
           })
