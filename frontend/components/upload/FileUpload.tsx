@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import axios from 'axios'
-import { Plus } from 'lucide-react'
+import { Loader, Plus } from 'lucide-react'
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -81,9 +81,7 @@ export default function FileUpload({
       />
 
       {loading && (
-        <span className="text-xs text-gray-400">
-          Uploading...
-        </span>
+        <Loader size={20} className="animate-spin" />
       )}
     </>
   )

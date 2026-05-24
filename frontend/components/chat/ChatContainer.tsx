@@ -64,7 +64,7 @@ export default function ChatContainer() {
 
             updated[
               assistantIndex
-            ].content = chunk
+            ].content += chunk
 
             return updated
           })
@@ -78,7 +78,7 @@ export default function ChatContainer() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#212121] text-white">
+    <div className="flex flex-col h-screen bg-[#042930] text-white">
 
       {/* Messages */}
       {hasMessages && (
@@ -97,7 +97,7 @@ export default function ChatContainer() {
                 <div
                   className={`px-5 py-4 rounded-3xl max-w-[85%] whitespace-pre-wrap leading-8 ${
                     msg.role === 'user'
-                      ? 'bg-[#303030]'
+                      ? 'bg-[#060609ca]'
                       : 'bg-transparent'
                   }`}
                 >
@@ -175,7 +175,7 @@ function InputBar({
   setUploadedFile,
 }: InputBarProps) {
   return (
-    <div className="bg-[#303030] rounded-3xl p-3">
+    <div className="bg-[#09056a] rounded-3xl p-3">
 
       {/* Uploaded File */}
       {uploadedFile && (
