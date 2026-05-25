@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import {
+  useEffect,
+  useState,
+} from 'react'
 
 import ReactMarkdown from 'react-markdown'
 
@@ -15,6 +18,12 @@ import FileUpload from '../upload/FileUpload'
 
 import type { Message } from '@/types/chat'
 
+const CHAT_STORAGE_KEY =
+  'resume-assistant-messages'
+
+const FILE_STORAGE_KEY =
+  'resume-assistant-file'
+
 export default function ChatContainer() {
   const [messages, setMessages] = useState<
     Message[]
@@ -28,7 +37,74 @@ export default function ChatContainer() {
   const [uploadedFile, setUploadedFile] =
     useState<string | null>(null)
 
+  const [hydrated, setHydrated] =
+    useState(false)
+
+  // =========================
+  // Load persisted data
+  // =========================
+
+  useEffect(() => {
+    const savedMessages =
+      localStorage.getItem(
+        CHAT_STORAGE_KEY
+      )
+
+    const savedFile =
+      localStorage.getItem(
+        FILE_STORAGE_KEY
+      )
+
+    if (savedMessages) {
+      setMessages(
+        JSON.parse(savedMessages)
+      )
+    }
+
+    if (savedFile) {
+      setUploadedFile(savedFile)
+    }
+
+    setHydrated(true)
+  }, [])
+
+  // =========================
+  // Persist messages
+  // =========================
+
+  useEffect(() => {
+    if (!hydrated) return
+
+    localStorage.setItem(
+      CHAT_STORAGE_KEY,
+      JSON.stringify(messages)
+    )
+  }, [messages, hydrated])
+
+  // =========================
+  // Persist uploaded file
+  // =========================
+
+  useEffect(() => {
+    if (!hydrated) return
+
+    if (uploadedFile) {
+      localStorage.setItem(
+        FILE_STORAGE_KEY,
+        uploadedFile
+      )
+    } else {
+      localStorage.removeItem(
+        FILE_STORAGE_KEY
+      )
+    }
+  }, [uploadedFile, hydrated])
+
   const hasMessages = messages.length > 0
+
+  // =========================
+  // Send message
+  // =========================
 
   const handleSend = async () => {
     if (!input.trim()) return
@@ -40,20 +116,24 @@ export default function ChatContainer() {
       content: currentInput,
     }
 
-    setMessages((prev) => [
-      ...prev,
+    const assistantMessage: Message = {
+      role: 'assistant',
+      content: '',
+    }
+
+    const updatedMessages = [
+      ...messages,
       userMessage,
-      {
-        role: 'assistant',
-        content: '',
-      },
-    ])
+      assistantMessage,
+    ]
+
+    setMessages(updatedMessages)
 
     setInput('')
     setLoading(true)
 
     const assistantIndex =
-      messages.length + 1
+      updatedMessages.length - 1
 
     try {
       await streamMessage(
@@ -64,7 +144,12 @@ export default function ChatContainer() {
 
             updated[
               assistantIndex
-            ].content += chunk
+            ] = {
+              ...updated[
+                assistantIndex
+              ],
+              content: chunk,
+            }
 
             return updated
           })
@@ -77,8 +162,46 @@ export default function ChatContainer() {
     }
   }
 
+  // =========================
+  // Clear chat
+  // =========================
+
+  const clearChat = () => {
+    localStorage.removeItem(
+      CHAT_STORAGE_KEY
+    )
+
+    localStorage.removeItem(
+      FILE_STORAGE_KEY
+    )
+
+    setMessages([])
+    setUploadedFile(null)
+  }
+
   return (
     <div className="flex flex-col h-screen bg-[#042930] text-white">
+
+      {/* Header */}
+      <div className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+        <h1 className="font-semibold text-lg">
+          Resume Assistant
+        </h1>
+
+        {hasMessages && (
+          <button
+            onClick={clearChat}
+            className="
+              text-sm
+              text-red-400
+              hover:text-red-300
+              transition
+            "
+          >
+            Clear Chat
+          </button>
+        )}
+      </div>
 
       {/* Messages */}
       {hasMessages && (
@@ -117,7 +240,7 @@ export default function ChatContainer() {
         </div>
       )}
 
-      {/* Centered Initial Layout */}
+      {/* Empty State */}
       {!hasMessages && (
         <div className="flex-1 flex flex-col items-center justify-center px-4">
 
@@ -137,7 +260,7 @@ export default function ChatContainer() {
         </div>
       )}
 
-      {/* Bottom Layout */}
+      {/* Bottom Input */}
       {hasMessages && (
         <div className="border-t border-gray-800 px-4 py-4">
           <div className="max-w-3xl mx-auto">
