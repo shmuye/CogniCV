@@ -3,10 +3,10 @@ backend/.venv/
 
 
 # Python Cache
-backend/__pycache__/
-backend/*.pyc
-backend/*.pyo
-backend/*.pyd
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
 
 # Environment Variables
 
