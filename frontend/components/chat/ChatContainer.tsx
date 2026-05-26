@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from 'react'
 
@@ -10,97 +11,181 @@ import ReactMarkdown from 'react-markdown'
 import {
   ArrowUp,
   FileText,
+  MessageSquare,
+  Plus,
+  Trash2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 
 import { streamMessage } from '@/services/rag.service'
 
 import FileUpload from '../upload/FileUpload'
 
-import type { Message } from '@/types/chat'
+import type {
+  Conversation,
+  Message,
+} from '@/types/chat'
 
-const CHAT_STORAGE_KEY =
-  'resume-assistant-messages'
+const CONVERSATIONS_STORAGE_KEY =
+  'resume-assistant-conversations'
 
-const FILE_STORAGE_KEY =
-  'resume-assistant-file'
+const ACTIVE_CHAT_STORAGE_KEY =
+  'resume-assistant-active-chat'
 
 export default function ChatContainer() {
-  const [messages, setMessages] = useState<
-    Message[]
-  >([])
+  const [conversations, setConversations] =
+    useState<Conversation[]>([])
+
+  const [activeConversationId, setActiveConversationId] =
+    useState<string | null>(null)
 
   const [input, setInput] = useState('')
 
   const [loading, setLoading] =
     useState(false)
 
-  const [uploadedFile, setUploadedFile] =
-    useState<string | null>(null)
-
   const [hydrated, setHydrated] =
     useState(false)
 
+  const [sidebarOpen, setSidebarOpen] =
+    useState(true)
+
   // =========================
-  // Load persisted data
+  // Hydration
   // =========================
 
   useEffect(() => {
-    const savedMessages =
+    const savedConversations =
       localStorage.getItem(
-        CHAT_STORAGE_KEY
+        CONVERSATIONS_STORAGE_KEY
       )
 
-    const savedFile =
+    const savedActiveChat =
       localStorage.getItem(
-        FILE_STORAGE_KEY
+        ACTIVE_CHAT_STORAGE_KEY
       )
 
-    if (savedMessages) {
-      setMessages(
-        JSON.parse(savedMessages)
-      )
-    }
+    if (savedConversations) {
+      const parsed =
+        JSON.parse(savedConversations)
 
-    if (savedFile) {
-      setUploadedFile(savedFile)
+      setConversations(parsed)
+
+      if (
+        savedActiveChat &&
+        parsed.some(
+          (c: Conversation) =>
+            c.id === savedActiveChat
+        )
+      ) {
+        setActiveConversationId(
+          savedActiveChat
+        )
+      } else if (parsed.length > 0) {
+        setActiveConversationId(
+          parsed[0].id
+        )
+      }
     }
 
     setHydrated(true)
   }, [])
 
   // =========================
-  // Persist messages
+  // Persistence
   // =========================
 
   useEffect(() => {
     if (!hydrated) return
 
     localStorage.setItem(
-      CHAT_STORAGE_KEY,
-      JSON.stringify(messages)
+      CONVERSATIONS_STORAGE_KEY,
+      JSON.stringify(conversations)
     )
-  }, [messages, hydrated])
-
-  // =========================
-  // Persist uploaded file
-  // =========================
+  }, [conversations, hydrated])
 
   useEffect(() => {
     if (!hydrated) return
 
-    if (uploadedFile) {
+    if (activeConversationId) {
       localStorage.setItem(
-        FILE_STORAGE_KEY,
-        uploadedFile
-      )
-    } else {
-      localStorage.removeItem(
-        FILE_STORAGE_KEY
+        ACTIVE_CHAT_STORAGE_KEY,
+        activeConversationId
       )
     }
-  }, [uploadedFile, hydrated])
+  }, [activeConversationId, hydrated])
+
+  // =========================
+  // Active conversation
+  // =========================
+
+  const activeConversation =
+    useMemo(() => {
+      return conversations.find(
+        (conversation) =>
+          conversation.id ===
+          activeConversationId
+      )
+    }, [
+      conversations,
+      activeConversationId,
+    ])
+
+  const messages =
+    activeConversation?.messages || []
+
+  const uploadedFile =
+    activeConversation?.uploadedFile ||
+    null
 
   const hasMessages = messages.length > 0
+
+  // =========================
+  // New Chat
+  // =========================
+
+  const createNewConversation = () => {
+    const newConversation: Conversation =
+      {
+        id: crypto.randomUUID(),
+        title: 'New Chat',
+        messages: [],
+        uploadedFile: null,
+        createdAt: Date.now(),
+      }
+
+    setConversations((prev) => [
+      newConversation,
+      ...prev,
+    ])
+
+    setActiveConversationId(
+      newConversation.id
+    )
+
+    setInput('')
+  }
+
+  // =========================
+  // Update conversation
+  // =========================
+
+  const updateConversation = (
+    conversationId: string,
+    updater: (
+      conversation: Conversation
+    ) => Conversation
+  ) => {
+    setConversations((prev) =>
+      prev.map((conversation) =>
+        conversation.id ===
+        conversationId
+          ? updater(conversation)
+          : conversation
+      )
+    )
+  }
 
   // =========================
   // Send message
@@ -108,6 +193,35 @@ export default function ChatContainer() {
 
   const handleSend = async () => {
     if (!input.trim()) return
+
+    let conversationId =
+      activeConversationId
+
+    // create chat automatically
+    if (!conversationId) {
+      const newConversation: Conversation =
+        {
+          id: crypto.randomUUID(),
+          title: input.slice(0, 30),
+          messages: [],
+          uploadedFile: null,
+          createdAt: Date.now(),
+        }
+
+      setConversations((prev) => [
+        newConversation,
+        ...prev,
+      ])
+
+      setActiveConversationId(
+        newConversation.id
+      )
+
+      conversationId =
+        newConversation.id
+    }
+
+    if (!conversationId) return
 
     const currentInput = input
 
@@ -121,38 +235,58 @@ export default function ChatContainer() {
       content: '',
     }
 
-    const updatedMessages = [
-      ...messages,
-      userMessage,
-      assistantMessage,
-    ]
-
-    setMessages(updatedMessages)
-
     setInput('')
     setLoading(true)
 
-    const assistantIndex =
-      updatedMessages.length - 1
+    updateConversation(
+      conversationId,
+      (conversation) => ({
+        ...conversation,
+        title:
+          conversation.messages.length ===
+          0
+            ? currentInput.slice(0, 30)
+            : conversation.title,
+        messages: [
+          ...conversation.messages,
+          userMessage,
+          assistantMessage,
+        ],
+      })
+    )
 
     try {
       await streamMessage(
         currentInput,
         (chunk) => {
-          setMessages((prev) => {
-            const updated = [...prev]
+          setConversations((prev) =>
+            prev.map((conversation) => {
+              if (
+                conversation.id !==
+                conversationId
+              ) {
+                return conversation
+              }
 
-            updated[
-              assistantIndex
-            ] = {
-              ...updated[
-                assistantIndex
-              ],
-              content: chunk,
-            }
+              const updatedMessages =
+                [
+                  ...conversation.messages,
+                ]
 
-            return updated
-          })
+              updatedMessages[
+                updatedMessages.length - 1
+              ] = {
+                role: 'assistant',
+                content: chunk,
+              }
+
+              return {
+                ...conversation,
+                messages:
+                  updatedMessages,
+              }
+            })
+          )
         }
       )
     } catch (err) {
@@ -163,117 +297,291 @@ export default function ChatContainer() {
   }
 
   // =========================
-  // Clear chat
+  // Delete chat
   // =========================
 
-  const clearChat = () => {
-    localStorage.removeItem(
-      CHAT_STORAGE_KEY
-    )
+  const deleteConversation = (
+    id: string
+  ) => {
+    const filtered =
+      conversations.filter(
+        (conversation) =>
+          conversation.id !== id
+      )
 
-    localStorage.removeItem(
-      FILE_STORAGE_KEY
-    )
+    setConversations(filtered)
 
-    setMessages([])
-    setUploadedFile(null)
+    if (
+      activeConversationId === id
+    ) {
+      setActiveConversationId(
+        filtered[0]?.id || null
+      )
+    }
+  }
+
+  // =========================
+  // Upload callback
+  // =========================
+
+  const handleUploadSuccess = (
+    fileName: string
+  ) => {
+    if (!activeConversationId) return
+
+    updateConversation(
+      activeConversationId,
+      (conversation) => ({
+        ...conversation,
+        uploadedFile: fileName,
+      })
+    )
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#042930] text-white">
+    <div className="h-screen bg-[#042930] text-white flex overflow-hidden">
 
-      {/* Header */}
-      <div className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="font-semibold text-lg">
-          Resume Assistant
-        </h1>
+      {/* Sidebar */}
+      <aside
+        className={`
+          border-r border-gray-800
+          bg-[#031d22]
+          transition-all duration-300
+          flex flex-col
+          ${
+            sidebarOpen
+              ? 'w-[280px]'
+              : 'w-[70px]'
+          }
+        `}
+      >
+        {/* Top */}
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+          {sidebarOpen && (
+            <button
+              onClick={
+                createNewConversation
+              }
+              className="
+                flex
+                items-center
+                gap-2
+                bg-[#0b3b45]
+                hover:bg-[#114b57]
+                transition
+                rounded-xl
+                px-4
+                py-3
+                text-sm
+                w-full
+              "
+            >
+              <Plus size={18} />
+              New Chat
+            </button>
+          )}
 
-        {hasMessages && (
           <button
-            onClick={clearChat}
-            className="
-              text-sm
-              text-red-400
-              hover:text-red-300
-              transition
-            "
+            onClick={() =>
+              setSidebarOpen(
+                !sidebarOpen
+              )
+            }
+            className="ml-2 p-2 hover:bg-gray-700 rounded-lg transition"
           >
-            Clear Chat
-          </button>
-        )}
-      </div>
-
-      {/* Messages */}
-      {hasMessages && (
-        <div className="flex-1 overflow-y-auto px-4 py-8">
-          <div className="max-w-3xl mx-auto space-y-8">
-
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  msg.role === 'user'
-                    ? 'justify-end'
-                    : 'justify-start'
-                }`}
-              >
-                <div
-                  className={`px-5 py-4 rounded-3xl max-w-[85%] whitespace-pre-wrap leading-8 ${
-                    msg.role === 'user'
-                      ? 'bg-[#060609ca]'
-                      : 'bg-transparent'
-                  }`}
-                >
-                  <ReactMarkdown>
-                    {msg.content}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="text-gray-400 animate-pulse">
-                Thinking...
-              </div>
+            {sidebarOpen ? (
+              <PanelLeftClose
+                size={18}
+              />
+            ) : (
+              <PanelLeftOpen
+                size={18}
+              />
             )}
-          </div>
+          </button>
         </div>
-      )}
 
-      {/* Empty State */}
-      {!hasMessages && (
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
+        {/* Chats */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {conversations.map(
+  (conversation) => (
+    <div
+      key={conversation.id}
+      className={`
+        w-full
+        rounded-xl
+        transition
+        flex
+        items-center
+        gap-2
+        ${
+          activeConversationId ===
+          conversation.id
+            ? 'bg-[#114b57]'
+            : 'hover:bg-[#0b3b45]'
+        }
+      `}
+    >
+      {/* Chat Button */}
+      <button
+        onClick={() =>
+          setActiveConversationId(
+            conversation.id
+          )
+        }
+        className="
+          flex-1
+          text-left
+          p-3
+          flex
+          items-start
+          gap-3
+          min-w-0
+        "
+      >
+        <MessageSquare
+          size={18}
+          className="mt-1 shrink-0"
+        />
 
-          <h1 className="text-3xl font-semibold mb-10 text-center">
-            Ask anything about your resume
-          </h1>
+        {sidebarOpen && (
+          <div className="min-w-0">
+            <p className="truncate text-sm">
+              {conversation.title}
+            </p>
 
-          <div className="w-full max-w-3xl">
-            <InputBar
-              input={input}
-              setInput={setInput}
-              handleSend={handleSend}
-              uploadedFile={uploadedFile}
-              setUploadedFile={setUploadedFile}
-            />
+            <p className="text-xs text-gray-400 mt-1">
+              {
+                conversation.messages
+                  .length
+              }{' '}
+              messages
+            </p>
           </div>
-        </div>
-      )}
+        )}
+      </button>
 
-      {/* Bottom Input */}
-      {hasMessages && (
-        <div className="border-t border-gray-800 px-4 py-4">
-          <div className="max-w-3xl mx-auto">
-            <InputBar
-              input={input}
-              setInput={setInput}
-              handleSend={handleSend}
-              uploadedFile={uploadedFile}
-              setUploadedFile={setUploadedFile}
-            />
-          </div>
-        </div>
+      {/* Delete Button */}
+      {sidebarOpen && (
+        <button
+          onClick={() =>
+            deleteConversation(
+              conversation.id
+            )
+          }
+          className="
+            p-2
+            mr-2
+            hover:text-red-400
+            transition
+            shrink-0
+          "
+        >
+          <Trash2 size={16} />
+        </button>
       )}
+    </div>
+  )
+)}
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Empty State */}
+        {!hasMessages && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <h1 className="text-3xl font-semibold mb-10 text-center">
+              Ask anything about your resume
+            </h1>
+
+            <div className="w-full max-w-3xl">
+              <InputBar
+                input={input}
+                setInput={setInput}
+                handleSend={handleSend}
+                uploadedFile={
+                  uploadedFile
+                }
+                onUploadSuccess={
+                  handleUploadSuccess
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        {hasMessages && (
+          <>
+            <div className="flex-1 overflow-y-auto px-4 py-8">
+              <div className="max-w-3xl mx-auto space-y-8">
+                {messages.map(
+                  (msg, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${
+                        msg.role ===
+                        'user'
+                          ? 'justify-end'
+                          : 'justify-start'
+                      }`}
+                    >
+                      <div
+                        className={`
+                            px-5
+                            py-4
+                            rounded-3xl
+                            max-w-[85%]
+                            whitespace-pre-wrap
+                            leading-8
+                            ${
+                              msg.role ===
+                              'user'
+                                ? 'bg-[#060609ca]'
+                                : 'bg-transparent'
+                            }
+                          `}
+                      >
+                        <ReactMarkdown>
+                          {
+                            msg.content
+                          }
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {loading && (
+                  <div className="text-gray-400 animate-pulse">
+                    Thinking...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 px-4 py-4">
+              <div className="max-w-3xl mx-auto">
+                <InputBar
+                  input={input}
+                  setInput={setInput}
+                  handleSend={
+                    handleSend
+                  }
+                  uploadedFile={
+                    uploadedFile
+                  }
+                  onUploadSuccess={
+                    handleUploadSuccess
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </main>
     </div>
   )
 }
@@ -285,8 +593,8 @@ interface InputBarProps {
   >
   handleSend: () => void
   uploadedFile: string | null
-  setUploadedFile: (
-    file: string | null
+  onUploadSuccess: (
+    fileName: string
   ) => void
 }
 
@@ -295,7 +603,7 @@ function InputBar({
   setInput,
   handleSend,
   uploadedFile,
-  setUploadedFile,
+  onUploadSuccess,
 }: InputBarProps) {
   return (
     <div className="bg-[#09056a] rounded-3xl p-3">
@@ -317,7 +625,7 @@ function InputBar({
         >
           <FileText size={18} />
 
-          <span className="text-sm">
+          <span className="text-sm truncate max-w-[200px]">
             {uploadedFile}
           </span>
         </div>
@@ -327,8 +635,8 @@ function InputBar({
       <div className="flex items-center gap-2">
 
         <FileUpload
-          onUploadSuccess={(fileName) =>
-            setUploadedFile(fileName)
+          onUploadSuccess={
+            onUploadSuccess
           }
         />
 
@@ -347,7 +655,9 @@ function InputBar({
             placeholder:text-gray-400
           "
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (
+              e.key === 'Enter'
+            ) {
               handleSend()
             }
           }}
