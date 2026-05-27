@@ -5,7 +5,7 @@ export const metadata = {
   icons: {
     icon: "/resume.png",
   },
-  title: "RAG Chatbot",
+  title: "CogniCV",
   description: "AI Resume Assistant",
 };
 
