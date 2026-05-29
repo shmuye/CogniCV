@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from langchain_ollama import (
     OllamaEmbeddings,
     ChatOllama,
@@ -59,23 +61,27 @@ Answer:
 
 
 # =========================
-# Globals
+# Load Conversation Vector Store
 # =========================
 
-vector_store = None
+def load_vector_store(
+    conversation_id: str,
+):
 
+    persist_directory = (
+        f"./chroma_db/{conversation_id}"
+    )
 
-# =========================
-# Load Vector Store
-# =========================
+    if not Path(
+        persist_directory
+    ).exists():
+        return None
 
-def load_vector_store():
-
-    global vector_store
-
-    vector_store = Chroma(
-        persist_directory="./chroma_db",
-        embedding_function=embeddings,
+    return Chroma(
+        persist_directory=
+        persist_directory,
+        embedding_function=
+        embeddings,
     )
 
 
@@ -83,13 +89,21 @@ def load_vector_store():
 # Streaming Query
 # =========================
 
-async def query_rag_stream(question: str):
+async def query_rag_stream(
+    question: str,
+    conversation_id: str,
+):
 
-    global vector_store
+    vector_store = load_vector_store(
+        conversation_id
+    )
 
     if vector_store is None:
-        yield "No documents indexed yet."
-        return
+          yield """
+I don’t have a resume to analyze yet.
+
+Please upload a PDF resume first, then ask me questions about it.
+"""
 
     retriever = vector_store.as_retriever(
         search_kwargs={"k": 3}

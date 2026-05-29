@@ -2,6 +2,7 @@ from fastapi import (
     APIRouter,
     UploadFile,
     File,
+    Form,
 )
 
 from pathlib import Path
@@ -9,11 +10,10 @@ import shutil
 
 from app.services.loader import load_pdf
 from app.services.splitter import split_docs
+
 from app.services.vector_store import (
     create_vector_store,
 )
-
-from app.core.rag import load_vector_store
 
 router = APIRouter()
 
@@ -23,10 +23,22 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 @router.post("/")
 async def upload(
-    file: UploadFile = File(...)
+    conversation_id: str = Form(...),
+    file: UploadFile = File(...),
 ):
 
-    file_path = UPLOAD_DIR / file.filename
+    conversation_dir = (
+        UPLOAD_DIR / conversation_id
+    )
+
+    conversation_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    file_path = (
+        conversation_dir / file.filename
+    )
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(
@@ -41,10 +53,10 @@ async def upload(
     chunks = split_docs(docs)
 
     # Create embeddings
-    create_vector_store(chunks)
-
-    # Reload retriever
-    load_vector_store()
+    create_vector_store(
+        chunks,
+        conversation_id,
+    )
 
     return {
         "message":

@@ -6,17 +6,24 @@ from langchain_chroma import Chroma
 from app.core.rag import embeddings
 
 
-CHROMA_PATH = "./chroma_db"
+BASE_CHROMA_PATH = "./chroma_db"
 
 
-def create_vector_store(chunks):
+def create_vector_store(
+    chunks,
+    conversation_id: str,
+):
 
-    # Remove old DB
-    if Path(CHROMA_PATH).exists():
-        shutil.rmtree(CHROMA_PATH)
+    persist_directory = (
+        f"{BASE_CHROMA_PATH}/{conversation_id}"
+    )
+
+    # Remove old DB for this conversation only
+    if Path(persist_directory).exists():
+        shutil.rmtree(persist_directory)
 
     return Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
-        persist_directory=CHROMA_PATH,
+        persist_directory=persist_directory,
     )

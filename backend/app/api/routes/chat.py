@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from fastapi.responses import (
     StreamingResponse,
 )
@@ -14,6 +15,7 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     message: str
+    conversation_id: str
 
 
 @router.post("/")
@@ -22,7 +24,8 @@ async def chat(request: ChatRequest):
     async def event_generator():
 
         async for chunk in query_rag_stream(
-            request.message
+            request.message,
+            request.conversation_id,
         ):
             yield chunk
 

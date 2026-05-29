@@ -1,18 +1,27 @@
 'use client'
 
 import { useRef, useState } from 'react'
+
 import axios from 'axios'
-import { Loader, Plus } from 'lucide-react'
+
+import {
+  Loader,
+  Plus,
+} from 'lucide-react'
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   'http://localhost:8000'
 
 interface Props {
-  onUploadSuccess?: (fileName: string) => void
+  conversationId: string
+  onUploadSuccess?: (
+    fileName: string
+  ) => void
 }
 
 export default function FileUpload({
+  conversationId,
   onUploadSuccess,
 }: Props) {
   const fileInputRef =
@@ -28,16 +37,26 @@ export default function FileUpload({
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0]
+    const file =
+      e.target.files?.[0]
 
     if (!file) return
 
     setLoading(true)
 
     try {
-      const formData = new FormData()
+      const formData =
+        new FormData()
 
-      formData.append('file', file)
+      formData.append(
+        'file',
+        file
+      )
+
+      formData.append(
+        'conversation_id',
+        conversationId
+      )
 
       const res = await axios.post(
         `${API_URL}/upload/`,
@@ -48,7 +67,9 @@ export default function FileUpload({
         throw new Error()
       }
 
-      onUploadSuccess?.(file.name)
+      onUploadSuccess?.(
+        file.name
+      )
 
     } catch (err) {
       console.error(err)
@@ -77,11 +98,16 @@ export default function FileUpload({
         type="file"
         accept="application/pdf"
         hidden
-        onChange={handleFileChange}
+        onChange={
+          handleFileChange
+        }
       />
 
       {loading && (
-        <Loader size={20} className="animate-spin" />
+        <Loader
+          size={20}
+          className="animate-spin"
+        />
       )}
     </>
   )

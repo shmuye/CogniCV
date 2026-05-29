@@ -4,6 +4,7 @@ const API_URL =
 
 export async function streamMessage(
   message: string,
+  conversationId: string,
   onChunk: (chunk: string) => void
 ) {
   const response = await fetch(
@@ -16,6 +17,8 @@ export async function streamMessage(
       },
       body: JSON.stringify({
         message,
+        conversation_id:
+          conversationId,
       }),
     }
   )

@@ -37,10 +37,13 @@ export default function ChatContainer() {
   const [conversations, setConversations] =
     useState<Conversation[]>([])
 
-  const [activeConversationId, setActiveConversationId] =
-    useState<string | null>(null)
+  const [
+    activeConversationId,
+    setActiveConversationId,
+  ] = useState<string | null>(null)
 
-  const [input, setInput] = useState('')
+  const [input, setInput] =
+    useState('')
 
   const [loading, setLoading] =
     useState(false)
@@ -139,10 +142,11 @@ export default function ChatContainer() {
     activeConversation?.uploadedFile ||
     null
 
-  const hasMessages = messages.length > 0
+  const hasMessages =
+    messages.length > 0
 
   // =========================
-  // New Chat
+  // Create new conversation
   // =========================
 
   const createNewConversation = () => {
@@ -197,7 +201,7 @@ export default function ChatContainer() {
     let conversationId =
       activeConversationId
 
-    // create chat automatically
+    // Auto create conversation
     if (!conversationId) {
       const newConversation: Conversation =
         {
@@ -258,6 +262,7 @@ export default function ChatContainer() {
     try {
       await streamMessage(
         currentInput,
+        conversationId,
         (chunk) => {
           setConversations((prev) =>
             prev.map((conversation) => {
@@ -297,7 +302,7 @@ export default function ChatContainer() {
   }
 
   // =========================
-  // Delete chat
+  // Delete conversation
   // =========================
 
   const deleteConversation = (
@@ -321,7 +326,7 @@ export default function ChatContainer() {
   }
 
   // =========================
-  // Upload callback
+  // Upload success
   // =========================
 
   const handleUploadSuccess = (
@@ -387,7 +392,13 @@ export default function ChatContainer() {
                 !sidebarOpen
               )
             }
-            className="ml-2 p-2 hover:bg-gray-700 rounded-lg transition"
+            className="
+              ml-2
+              p-2
+              hover:bg-gray-700
+              rounded-lg
+              transition
+            "
           >
             {sidebarOpen ? (
               <PanelLeftClose
@@ -404,85 +415,87 @@ export default function ChatContainer() {
         {/* Chats */}
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {conversations.map(
-  (conversation) => (
-    <div
-      key={conversation.id}
-      className={`
-        w-full
-        rounded-xl
-        transition
-        flex
-        items-center
-        gap-2
-        ${
-          activeConversationId ===
-          conversation.id
-            ? 'bg-[#114b57]'
-            : 'hover:bg-[#0b3b45]'
-        }
-      `}
-    >
-      {/* Chat Button */}
-      <button
-        onClick={() =>
-          setActiveConversationId(
-            conversation.id
-          )
-        }
-        className="
-          flex-1
-          text-left
-          p-3
-          flex
-          items-start
-          gap-3
-          min-w-0
-        "
-      >
-        <MessageSquare
-          size={18}
-          className="mt-1 shrink-0"
-        />
+            (conversation) => (
+              <div
+                key={conversation.id}
+                className={`
+                  w-full
+                  rounded-xl
+                  transition
+                  flex
+                  items-center
+                  gap-2
+                  ${
+                    activeConversationId ===
+                    conversation.id
+                      ? 'bg-[#114b57]'
+                      : 'hover:bg-[#0b3b45]'
+                  }
+                `}
+              >
+                {/* Select Chat */}
+                <button
+                  onClick={() =>
+                    setActiveConversationId(
+                      conversation.id
+                    )
+                  }
+                  className="
+                    flex-1
+                    text-left
+                    p-3
+                    flex
+                    items-start
+                    gap-3
+                    min-w-0
+                  "
+                >
+                  <MessageSquare
+                    size={18}
+                    className="mt-1 shrink-0"
+                  />
 
-        {sidebarOpen && (
-          <div className="min-w-0">
-            <p className="truncate text-sm">
-              {conversation.title}
-            </p>
+                  {sidebarOpen && (
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">
+                        {
+                          conversation.title
+                        }
+                      </p>
 
-            <p className="text-xs text-gray-400 mt-1">
-              {
-                conversation.messages
-                  .length
-              }{' '}
-              messages
-            </p>
-          </div>
-        )}
-      </button>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {
+                          conversation
+                            .messages.length
+                        }{' '}
+                        messages
+                      </p>
+                    </div>
+                  )}
+                </button>
 
-      {/* Delete Button */}
-      {sidebarOpen && (
-        <button
-          onClick={() =>
-            deleteConversation(
-              conversation.id
+                {/* Delete */}
+                {sidebarOpen && (
+                  <button
+                    onClick={() =>
+                      deleteConversation(
+                        conversation.id
+                      )
+                    }
+                    className="
+                      p-2
+                      mr-2
+                      hover:text-red-400
+                      transition
+                      shrink-0
+                    "
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
             )
-          }
-          className="
-            p-2
-            mr-2
-            hover:text-red-400
-            transition
-            shrink-0
-          "
-        >
-          <Trash2 size={16} />
-        </button>
-      )}
-    </div>
-  )
-)}
+          )}
         </div>
       </aside>
 
@@ -503,6 +516,10 @@ export default function ChatContainer() {
                 handleSend={handleSend}
                 uploadedFile={
                   uploadedFile
+                }
+                conversationId={
+                  activeConversationId ||
+                  ''
                 }
                 onUploadSuccess={
                   handleUploadSuccess
@@ -530,19 +547,19 @@ export default function ChatContainer() {
                     >
                       <div
                         className={`
-                            px-5
-                            py-4
-                            rounded-3xl
-                            max-w-[85%]
-                            whitespace-pre-wrap
-                            leading-8
-                            ${
-                              msg.role ===
-                              'user'
-                                ? 'bg-[#060609ca]'
-                                : 'bg-transparent'
-                            }
-                          `}
+                          px-5
+                          py-4
+                          rounded-3xl
+                          max-w-[85%]
+                          whitespace-pre-wrap
+                          leading-8
+                          ${
+                            msg.role ===
+                            'user'
+                              ? 'bg-[#060609ca]'
+                              : 'bg-transparent'
+                          }
+                        `}
                       >
                         <ReactMarkdown>
                           {
@@ -562,6 +579,7 @@ export default function ChatContainer() {
               </div>
             </div>
 
+            {/* Bottom Input */}
             <div className="border-t border-gray-800 px-4 py-4">
               <div className="max-w-3xl mx-auto">
                 <InputBar
@@ -572,6 +590,10 @@ export default function ChatContainer() {
                   }
                   uploadedFile={
                     uploadedFile
+                  }
+                  conversationId={
+                    activeConversationId ||
+                    ''
                   }
                   onUploadSuccess={
                     handleUploadSuccess
@@ -591,8 +613,13 @@ interface InputBarProps {
   setInput: React.Dispatch<
     React.SetStateAction<string>
   >
+
   handleSend: () => void
+
   uploadedFile: string | null
+
+  conversationId: string
+
   onUploadSuccess: (
     fileName: string
   ) => void
@@ -603,6 +630,7 @@ function InputBar({
   setInput,
   handleSend,
   uploadedFile,
+  conversationId,
   onUploadSuccess,
 }: InputBarProps) {
   return (
@@ -635,6 +663,9 @@ function InputBar({
       <div className="flex items-center gap-2">
 
         <FileUpload
+          conversationId={
+            conversationId
+          }
           onUploadSuccess={
             onUploadSuccess
           }
@@ -655,9 +686,7 @@ function InputBar({
             placeholder:text-gray-400
           "
           onKeyDown={(e) => {
-            if (
-              e.key === 'Enter'
-            ) {
+            if (e.key === 'Enter') {
               handleSend()
             }
           }}
