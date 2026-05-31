@@ -11,8 +11,13 @@ import shutil
 from app.services.loader import load_pdf
 from app.services.splitter import split_docs
 
+
 from app.services.vector_store import (
     create_vector_store,
+)
+
+from app.services.resume_metadata import (
+    extract_resume_metadata,
 )
 
 router = APIRouter()
@@ -49,6 +54,15 @@ async def upload(
     # Load PDF
     docs = load_pdf(str(file_path))
 
+    resume_text = "\n".join(
+        doc.page_content
+        for doc in docs
+    )
+
+    metadata = extract_resume_metadata(
+        resume_text
+    )
+
     # Split
     chunks = split_docs(docs)
 
@@ -60,5 +74,6 @@ async def upload(
 
     return {
         "message":
-        "File uploaded and indexed successfully"
+        "File uploaded and indexed successfully",
+        "metadata": metadata,
     }

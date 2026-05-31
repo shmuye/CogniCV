@@ -100,10 +100,13 @@ async def query_rag_stream(
 
     if vector_store is None:
           yield """
-I don’t have a resume to analyze yet.
+            I don’t have a resume to analyze yet.
 
-Please upload a PDF resume first, then ask me questions about it.
-"""
+            Please upload a PDF resume first, then ask me questions about it.
+          """
+
+          return
+
 
     retriever = vector_store.as_retriever(
         search_kwargs={"k": 3}
