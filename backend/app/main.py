@@ -8,7 +8,7 @@ from app.api.routes import (
     chat,
     upload,
     health,
-)
+    auth,
 
 app = FastAPI()
 
@@ -33,4 +33,8 @@ app.include_router(
 app.include_router(
     health.router,
     prefix="/health",
+)
+app.include_router(
+    auth.router,
+    prefix="/auth"
 )
