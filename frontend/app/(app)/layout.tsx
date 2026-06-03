@@ -3,9 +3,12 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToken } from '@/lib/auth'
-import ChatContainer from '@/components/chat/ChatContainer'
 
-export default function ChatPage() {
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const router = useRouter()
 
   useEffect(() => {
@@ -14,5 +17,9 @@ export default function ChatPage() {
     }
   }, [])
 
-  return <ChatContainer />
+  return (
+    <div className="h-screen bg-[#042930] text-white">
+      {children}
+    </div>
+  )
 }

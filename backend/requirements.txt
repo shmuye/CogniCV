@@ -9,3 +9,5 @@ pymupdf
 fastapi
 pydantic
 uvicorn
+passlib[bcrypt]
+python-jose[cryptography]

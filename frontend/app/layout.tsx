@@ -1,12 +1,11 @@
-import { icons } from "lucide-react";
 import "./globals.css";
 
 export const metadata = {
+  title: "CogniCV",
+  description: "AI Resume Assistant",
   icons: {
     icon: "/resume.png",
   },
-  title: "CogniCV",
-  description: "AI Resume Assistant",
 };
 
 export default function RootLayout({
@@ -16,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className="h-full">{children}</body>
+      <body className="h-full bg-[#042930] text-white">
+        {children}
+      </body>
     </html>
   );
 }

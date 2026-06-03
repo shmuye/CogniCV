@@ -10,6 +10,8 @@ from app.api.routes import (
     health,
     auth,
 
+)
+
 app = FastAPI()
 
 app.add_middleware(
