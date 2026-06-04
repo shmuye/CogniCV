@@ -9,7 +9,10 @@ from app.api.routes import (
     upload,
     health,
     auth,
+)
 
+from app.db.init_db import (
+    init_db,
 )
 
 app = FastAPI()
@@ -21,6 +24,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
+
 
 app.include_router(
     chat.router,
@@ -36,7 +45,8 @@ app.include_router(
     health.router,
     prefix="/health",
 )
+
 app.include_router(
     auth.router,
-    prefix="/auth"
+    prefix="/auth",
 )

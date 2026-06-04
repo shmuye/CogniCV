@@ -10,8 +10,8 @@ backend/**/*.pyd
 
 # Environment Variables
 
-backend/env/
-frontend/.env/
+backend/.env
+frontend/.env
 
 # Vector Database
 backend/chroma_db/

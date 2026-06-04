@@ -1,8 +1,19 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import uuid
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Depends,
+)
 
-from app.db.fake_db import users_db
+from pydantic import BaseModel
+
+from sqlalchemy.orm import Session
+
+from app.db.dependencies import (
+    get_db,
+)
+
+from app.models.user import User
+
 from app.core.security import (
     hash_password,
     verify_password,
@@ -18,43 +29,70 @@ class AuthRequest(BaseModel):
 
 
 @router.post("/signup")
-def signup(data: AuthRequest):
-    if data.email in users_db:
+def signup(
+    data: AuthRequest,
+    db: Session = Depends(get_db),
+):
+    existing_user = (
+        db.query(User)
+        .filter(
+            User.email == data.email
+        )
+        .first()
+    )
+
+    if existing_user:
         raise HTTPException(
             status_code=400,
             detail="User already exists",
         )
 
-    user_id = str(uuid.uuid4())
-
-    users_db[data.email] = {
-        "id": user_id,
-        "email": data.email,
-        "password": hash_password(
+    user = User(
+        email=data.email,
+        password=hash_password(
             data.password
         ),
-    }
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
 
     token = create_access_token(
-        {"sub": user_id}
+        {"sub": str(user.id)}
     )
 
     return {
         "access_token": token,
         "user": {
-            "id": user_id,
-            "email": data.email,
+            "id": user.id,
+            "email": user.email,
         },
     }
 
 
 @router.post("/login")
-def login(data: AuthRequest):
-    user = users_db.get(data.email)
+def login(
+    data: AuthRequest,
+    db: Session = Depends(get_db),
+):
+    user = (
+        db.query(User)
+        .filter(
+            User.email == data.email
+        )
+        .first()
+    )
 
-    if not user or not verify_password(
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+        )
+
+    if not verify_password(
         data.password,
-        user["password"],
+        user.password,
     ):
         raise HTTPException(
             status_code=401,
@@ -62,13 +100,13 @@ def login(data: AuthRequest):
         )
 
     token = create_access_token(
-        {"sub": user["id"]}
+        {"sub": str(user.id)}
     )
 
     return {
         "access_token": token,
         "user": {
-            "id": user["id"],
-            "email": user["email"],
+            "id": user.id,
+            "email": user.email,
         },
     }
