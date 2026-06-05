@@ -11,3 +11,6 @@ pydantic
 uvicorn
 passlib[bcrypt]
 python-jose[cryptography]
+sqlalchemy
+psycopg2-binary
+python-dotenv
